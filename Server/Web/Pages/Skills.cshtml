@@ -24,11 +24,11 @@
                     <div class="row g-2">
                         <div class="col-md-4">
                             <label class="form-label">玩家名称</label>
-                            <input type="text" class="form-control" name="playerName" placeholder="在线玩家角色名" required>
+                            <input type="text" class="form-control" name="playerName" id="giveSkillPlayerName" placeholder="在线玩家角色名" required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">技能 ID</label>
-                            <input type="number" class="form-control" name="magicIndex" placeholder="技能索引" min="0" required>
+                            <input type="number" class="form-control" name="magicIndex" id="giveSkillMagicIndex" placeholder="技能索引" min="0" required>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">等级</label>
@@ -87,7 +87,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">技能 ID</label>
-                    <input type="number" class="form-control" name="magicIndex" placeholder="要移除的技能索引" min="0" required>
+                    <input type="number" class="form-control" name="magicIndex" id="removeSkillMagicIndex" placeholder="要移除的技能索引" min="0" required>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-warning w-100">
@@ -166,7 +166,7 @@
                         <th>消耗</th>
                         <th>学习等级</th>
                         <th>冷却</th>
-                        <th style="width: 100px;">操作</th>
+                        <th style="width: 120px;">操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -228,28 +228,35 @@
                                 <small>@magic.Delay ms</small>
                             </td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#editModal"
-                                        data-index="@magic.Index"
-                                        data-name="@magic.Name"
-                                        data-icon="@magic.Icon"
-                                        data-minbasepower="@magic.MinBasePower"
-                                        data-maxbasepower="@magic.MaxBasePower"
-                                        data-minlevelpower="@magic.MinLevelPower"
-                                        data-maxlevelpower="@magic.MaxLevelPower"
-                                        data-basecost="@magic.BaseCost"
-                                        data-levelcost="@magic.LevelCost"
-                                        data-needlevel1="@magic.NeedLevel1"
-                                        data-needlevel2="@magic.NeedLevel2"
-                                        data-needlevel3="@magic.NeedLevel3"
-                                        data-experience1="@magic.Experience1"
-                                        data-experience2="@magic.Experience2"
-                                        data-experience3="@magic.Experience3"
-                                        data-delay="@magic.Delay"
-                                        data-description="@magic.Description">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-success"
+                                            onclick="fillSkillMagic(@magic.Index)"
+                                            title="填入技能ID">
+                                        <i class="bi bi-gift"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editModal"
+                                            data-index="@magic.Index"
+                                            data-name="@magic.Name"
+                                            data-icon="@magic.Icon"
+                                            data-minbasepower="@magic.MinBasePower"
+                                            data-maxbasepower="@magic.MaxBasePower"
+                                            data-minlevelpower="@magic.MinLevelPower"
+                                            data-maxlevelpower="@magic.MaxLevelPower"
+                                            data-basecost="@magic.BaseCost"
+                                            data-levelcost="@magic.LevelCost"
+                                            data-needlevel1="@magic.NeedLevel1"
+                                            data-needlevel2="@magic.NeedLevel2"
+                                            data-needlevel3="@magic.NeedLevel3"
+                                            data-experience1="@magic.Experience1"
+                                            data-experience2="@magic.Experience2"
+                                            data-experience3="@magic.Experience3"
+                                            data-delay="@magic.Delay"
+                                            data-description="@magic.Description">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -434,6 +441,18 @@
                 });
             }
         });
+
+        // 填充技能ID到给予/移除表单
+        function fillSkillMagic(magicIndex) {
+            const giveInput = document.getElementById('giveSkillMagicIndex');
+            if (giveInput) giveInput.value = magicIndex;
+
+            const removeInput = document.getElementById('removeSkillMagicIndex');
+            if (removeInput) removeInput.value = magicIndex;
+
+            const playerInput = document.getElementById('giveSkillPlayerName');
+            if (playerInput) playerInput.focus();
+        }
 
         // Edit modal data binding
         var editModal = document.getElementById('editModal');
