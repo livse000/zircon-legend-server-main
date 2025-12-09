@@ -1,0 +1,1154 @@
+@page
+@model NpcsModel
+@{
+    ViewData["Title"] = "NPC管理";
+    ViewData["ActivePage"] = "Npcs";
+}
+
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0">NPC管理</h4>
+            <small class="text-muted">管理游戏中的NPC、对话页面、条件检查、动作和商品配置</small>
+        </div>
+        <button type="button" class="btn btn-success" onclick="showCreateNpcModal()">
+            <i class="bi bi-plus-lg"></i> 新建NPC
+        </button>
+    </div>
+</div>
+
+<!-- Online NPCs Stats -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-broadcast"></i> 在线NPC实例</span>
+        <button type="button" class="btn btn-sm btn-light" onclick="loadOnlineNpcs()">
+            <i class="bi bi-arrow-clockwise"></i> 刷新
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="onlineNpcsContainer">
+            <div class="text-center text-muted py-3">
+                <i class="bi bi-hourglass-split"></i> 点击刷新按钮加载在线NPC...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" name="Keyword" value="@Model.Keyword" placeholder="搜索NPC名称、区域或地图...">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> 搜索
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- NPCs Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-standing"></i> NPC列表</span>
+        <span class="badge bg-primary">共 @Model.TotalCount 个NPC</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>名称</th>
+                        <th>图像</th>
+                        <th>区域</th>
+                        <th>地图</th>
+                        <th>入口页面</th>
+                        <th>任务</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="npcsTableBody">
+                    @if (Model.Npcs.Any())
+                    {
+                        @foreach (var npc in Model.Npcs)
+                        {
+                            <tr data-npc-index="@npc.Index">
+                                <td><code>@npc.Index</code></td>
+                                <td><strong>@npc.NPCName</strong></td>
+                                <td>@npc.Image</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(npc.RegionName) && npc.RegionName != "未设置")
+                                    {
+                                        <span class="badge bg-info">@npc.RegionName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>@npc.MapName</td>
+                                <td>
+                                    @if (npc.HasEntryPage)
+                                    {
+                                        <button class="btn btn-sm btn-outline-success" onclick="viewNpcPage(@npc.EntryPageIndex)" title="@npc.EntryPageDescription">
+                                            <i class="bi bi-chat-dots"></i> 查看
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="createEntryPage(@npc.Index)">
+                                            <i class="bi bi-plus"></i> 创建
+                                        </button>
+                                    }
+                                </td>
+                                <td>
+                                    @if (npc.StartQuestsCount > 0 || npc.FinishQuestsCount > 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            开始: @npc.StartQuestsCount / 完成: @npc.FinishQuestsCount
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-info" onclick="viewNpcDetail(@npc.Index)" title="查看详情">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="editNpc(@npc.Index)" title="编辑">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" onclick="deleteNpc(@npc.Index, '@npc.NPCName')" title="删除">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox display-6"></i>
+                                <p class="mb-0 mt-2">没有找到NPC</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination pagination-sm mb-0 justify-content-center">
+                    <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?Keyword=@Model.Keyword&CurrentPage=1"><i class="bi bi-chevron-double-left"></i></a>
+                    </li>
+                    <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?Keyword=@Model.Keyword&CurrentPage=@(Model.CurrentPage - 1)"><i class="bi bi-chevron-left"></i></a>
+                    </li>
+                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="?Keyword=@Model.Keyword&CurrentPage=@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="?Keyword=@Model.Keyword&CurrentPage=@(Model.CurrentPage + 1)"><i class="bi bi-chevron-right"></i></a>
+                    </li>
+                    <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="?Keyword=@Model.Keyword&CurrentPage=@Model.TotalPages"><i class="bi bi-chevron-double-right"></i></a>
+                    </li>
+                </ul>
+                <div class="text-center mt-2"><small class="text-muted">第 @Model.CurrentPage / @Model.TotalPages 页</small></div>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- Create NPC Modal -->
+<div class="modal fade" id="createNpcModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-plus-lg"></i> 新建NPC</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createNpcForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">NPC名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="npcName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">图像编号</label>
+                        <input type="number" class="form-control" name="image" value="0" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">区域</label>
+                        <select class="form-select" name="regionIndex" id="createNpcRegion">
+                            <option value="0">-- 不设置区域 --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> 创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit NPC Modal -->
+<div class="modal fade" id="npcEditModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑NPC</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="npcEditForm">
+                <div class="modal-body">
+                    <input type="hidden" name="npcIndex" id="editNpcIndex">
+                    <div class="mb-3">
+                        <label class="form-label">NPC名称</label>
+                        <input type="text" class="form-control" name="npcName" id="editNpcName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">图像编号</label>
+                        <input type="number" class="form-control" name="image" id="editNpcImage" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">区域</label>
+                        <select class="form-select" name="regionIndex" id="editNpcRegion">
+                            <option value="0">-- 不设置区域 --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span class="text-muted me-auto"><i class="bi bi-exclamation-triangle"></i> 需要 SuperAdmin 权限</span>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> 保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- NPC Detail Modal -->
+<div class="modal fade" id="npcDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> NPC详情</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="npcDetailContent">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NPC Page Detail Modal -->
+<div class="modal fade" id="npcPageModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-chat-dots"></i> NPC页面详情</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="npcPageContent">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Entry Page Modal -->
+<div class="modal fade" id="createEntryPageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-plus-lg"></i> 创建入口页面</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createEntryPageForm">
+                <div class="modal-body">
+                    <input type="hidden" name="npcIndex" id="createPageNpcIndex">
+                    <div class="mb-3">
+                        <label class="form-label">页面描述</label>
+                        <input type="text" class="form-control" name="description" placeholder="如: 主菜单、商店等">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">对话类型</label>
+                        <select class="form-select" name="dialogType" id="createPageDialogType"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">对话内容</label>
+                        <textarea class="form-control" name="say" rows="5" placeholder="NPC对话文本..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> 创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Page Modal -->
+<div class="modal fade" id="editPageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑页面</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editPageForm">
+                <div class="modal-body">
+                    <input type="hidden" name="pageIndex" id="editPageIndex">
+                    <div class="mb-3">
+                        <label class="form-label">页面描述</label>
+                        <input type="text" class="form-control" name="description" id="editPageDescription">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">对话类型</label>
+                        <select class="form-select" name="dialogType" id="editPageDialogType"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">对话内容</label>
+                        <textarea class="form-control" name="say" id="editPageSay" rows="5"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">参数</label>
+                        <input type="text" class="form-control" name="arguments" id="editPageArguments">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-check-lg"></i> 保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Check Modal -->
+<div class="modal fade" id="addCheckModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-plus"></i> 添加检查条件</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCheckForm">
+                <div class="modal-body">
+                    <input type="hidden" name="pageIndex" id="addCheckPageIndex">
+                    <div class="mb-3">
+                        <label class="form-label">检查类型</label>
+                        <select class="form-select" name="checkType" id="addCheckType"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">操作符</label>
+                        <select class="form-select" name="operatorType" id="addCheckOperator"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">字符串参数</label>
+                        <input type="text" class="form-control" name="stringParam">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">整数参数1</label>
+                            <input type="number" class="form-control" name="intParam1" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">整数参数2</label>
+                            <input type="number" class="form-control" name="intParam2" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">物品 (可选)</label>
+                        <input type="text" class="form-control" id="addCheckItemSearch" placeholder="搜索物品...">
+                        <input type="hidden" name="itemIndex" id="addCheckItemIndex" value="0">
+                        <small class="text-muted" id="addCheckItemName"></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-info"><i class="bi bi-plus"></i> 添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Action Modal -->
+<div class="modal fade" id="addActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-plus"></i> 添加动作</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addActionForm">
+                <div class="modal-body">
+                    <input type="hidden" name="pageIndex" id="addActionPageIndex">
+                    <div class="mb-3">
+                        <label class="form-label">动作类型</label>
+                        <select class="form-select" name="actionType" id="addActionType"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">字符串参数</label>
+                        <input type="text" class="form-control" name="stringParam">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">整数参数1</label>
+                            <input type="number" class="form-control" name="intParam1" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">整数参数2</label>
+                            <input type="number" class="form-control" name="intParam2" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">物品 (可选)</label>
+                        <input type="text" class="form-control" id="addActionItemSearch" placeholder="搜索物品...">
+                        <input type="hidden" name="itemIndex" id="addActionItemIndex" value="0">
+                        <small class="text-muted" id="addActionItemName"></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地图 (可选)</label>
+                        <input type="text" class="form-control" id="addActionMapSearch" placeholder="搜索地图...">
+                        <input type="hidden" name="mapIndex" id="addActionMapIndex" value="0">
+                        <small class="text-muted" id="addActionMapName"></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-plus"></i> 添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Button Modal -->
+<div class="modal fade" id="addButtonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-plus"></i> 添加按钮</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addButtonForm">
+                <div class="modal-body">
+                    <input type="hidden" name="pageIndex" id="addButtonPageIndex">
+                    <div class="mb-3">
+                        <label class="form-label">按钮ID</label>
+                        <input type="number" class="form-control" name="buttonId" value="0" min="0">
+                        <small class="text-muted">按钮ID用于客户端识别按钮</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus"></i> 添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Good Modal -->
+<div class="modal fade" id="addGoodModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-plus"></i> 添加商品</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addGoodForm">
+                <div class="modal-body">
+                    <input type="hidden" name="pageIndex" id="addGoodPageIndex">
+                    <div class="mb-3">
+                        <label class="form-label">物品 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="addGoodItemSearch" placeholder="搜索物品..." required>
+                        <input type="hidden" name="itemIndex" id="addGoodItemIndex" value="0">
+                        <small class="text-muted" id="addGoodItemName"></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">价格倍率</label>
+                        <input type="number" class="form-control" name="rate" value="1" min="0" step="0.1">
+                        <small class="text-muted">默认为1，表示原价</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-plus"></i> 添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// 缓存数据
+let regionsCache = null;
+let dialogTypesCache = null;
+let checkTypesCache = null;
+let operatorsCache = null;
+let actionTypesCache = null;
+let currentPageIndex = null;
+
+function escapeHtml(value) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(value ?? '').replace(/[&<>"']/g, (m) => map[m]);
+}
+
+// 加载区域列表
+async function loadRegions() {
+    if (regionsCache) return regionsCache;
+    const res = await fetch('/Npcs?handler=Regions');
+    const result = await res.json();
+    if (result.success) regionsCache = result.data;
+    return regionsCache || [];
+}
+
+// 加载对话类型
+async function loadDialogTypes() {
+    if (dialogTypesCache) return dialogTypesCache;
+    const res = await fetch('/Npcs?handler=DialogTypes');
+    const result = await res.json();
+    if (result.success) dialogTypesCache = result.data;
+    return dialogTypesCache || [];
+}
+
+// 加载检查类型
+async function loadCheckTypes() {
+    if (checkTypesCache) return checkTypesCache;
+    const res = await fetch('/Npcs?handler=CheckTypes');
+    const result = await res.json();
+    if (result.success) checkTypesCache = result.data;
+    return checkTypesCache || [];
+}
+
+// 加载操作符
+async function loadOperators() {
+    if (operatorsCache) return operatorsCache;
+    const res = await fetch('/Npcs?handler=Operators');
+    const result = await res.json();
+    if (result.success) operatorsCache = result.data;
+    return operatorsCache || [];
+}
+
+// 加载动作类型
+async function loadActionTypes() {
+    if (actionTypesCache) return actionTypesCache;
+    const res = await fetch('/Npcs?handler=ActionTypes');
+    const result = await res.json();
+    if (result.success) actionTypesCache = result.data;
+    return actionTypesCache || [];
+}
+
+// 填充区域下拉框
+async function fillRegionSelect(selectId, selectedValue = 0) {
+    const regions = await loadRegions();
+    const select = document.getElementById(selectId);
+    select.innerHTML = '<option value="0">-- 不设置区域 --</option>';
+    regions.forEach(r => {
+        select.innerHTML += `<option value="${r.index}" ${r.index == selectedValue ? 'selected' : ''}>[${r.mapName}] ${escapeHtml(r.description)}</option>`;
+    });
+}
+
+// 填充对话类型下拉框
+async function fillDialogTypeSelect(selectId, selectedValue = 0) {
+    const types = await loadDialogTypes();
+    const select = document.getElementById(selectId);
+    select.innerHTML = '';
+    types.forEach(t => {
+        select.innerHTML += `<option value="${t.value}" ${t.value == selectedValue ? 'selected' : ''}>${t.name}</option>`;
+    });
+}
+
+// 填充检查类型下拉框
+async function fillCheckTypeSelect(selectId, selectedValue = 0) {
+    const types = await loadCheckTypes();
+    const select = document.getElementById(selectId);
+    select.innerHTML = '';
+    types.forEach(t => {
+        select.innerHTML += `<option value="${t.value}" ${t.value == selectedValue ? 'selected' : ''}>${t.name}</option>`;
+    });
+}
+
+// 填充操作符下拉框
+async function fillOperatorSelect(selectId, selectedValue = 0) {
+    const ops = await loadOperators();
+    const select = document.getElementById(selectId);
+    select.innerHTML = '';
+    ops.forEach(o => {
+        select.innerHTML += `<option value="${o.value}" ${o.value == selectedValue ? 'selected' : ''}>${o.name}</option>`;
+    });
+}
+
+// 填充动作类型下拉框
+async function fillActionTypeSelect(selectId, selectedValue = 0) {
+    const types = await loadActionTypes();
+    const select = document.getElementById(selectId);
+    select.innerHTML = '';
+    types.forEach(t => {
+        select.innerHTML += `<option value="${t.value}" ${t.value == selectedValue ? 'selected' : ''}>${t.name}</option>`;
+    });
+}
+
+// 物品搜索
+function setupItemSearch(inputId, hiddenId, nameId) {
+    const input = document.getElementById(inputId);
+    let debounce = null;
+    input.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+            const keyword = this.value;
+            if (keyword.length < 1) return;
+            const res = await fetch(`/Npcs?handler=SearchItems&keyword=${encodeURIComponent(keyword)}`);
+            const result = await res.json();
+            if (result.success && result.data.length > 0) {
+                const item = result.data[0];
+                document.getElementById(hiddenId).value = item.index;
+                document.getElementById(nameId).textContent = `已选择: [${item.index}] ${item.name}`;
+            }
+        }, 300);
+    });
+}
+
+// 地图搜索
+function setupMapSearch(inputId, hiddenId, nameId) {
+    const input = document.getElementById(inputId);
+    let debounce = null;
+    input.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+            const keyword = this.value;
+            if (keyword.length < 1) return;
+            const res = await fetch(`/Npcs?handler=SearchMaps&keyword=${encodeURIComponent(keyword)}`);
+            const result = await res.json();
+            if (result.success && result.data.length > 0) {
+                const map = result.data[0];
+                document.getElementById(hiddenId).value = map.index;
+                document.getElementById(nameId).textContent = `已选择: [${map.index}] ${map.name}`;
+            }
+        }, 300);
+    });
+}
+
+// 显示创建NPC模态框
+async function showCreateNpcModal() {
+    await fillRegionSelect('createNpcRegion');
+    new bootstrap.Modal(document.getElementById('createNpcModal')).show();
+}
+
+// 加载在线NPC
+function loadOnlineNpcs() {
+    const container = document.getElementById('onlineNpcsContainer');
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> 加载中...</div>';
+    fetch('/Npcs?handler=OnlineNpcs')
+        .then(r => r.json())
+        .then(result => {
+            if (result.success) {
+                if (result.data.length === 0) {
+                    container.innerHTML = '<div class="text-center text-muted py-3">当前没有在线NPC实例</div>';
+                    return;
+                }
+                const grouped = {};
+                result.data.forEach(npc => {
+                    if (!grouped[npc.mapName]) grouped[npc.mapName] = [];
+                    grouped[npc.mapName].push(npc);
+                });
+                let html = '<div class="row">';
+                for (const [mapName, npcs] of Object.entries(grouped)) {
+                    html += `<div class="col-md-4 mb-3"><div class="card h-100">
+                        <div class="card-header py-2"><i class="bi bi-map"></i> ${escapeHtml(mapName)} <span class="badge bg-primary float-end">${npcs.length}</span></div>
+                        <ul class="list-group list-group-flush" style="max-height:200px;overflow-y:auto;">`;
+                    npcs.forEach(npc => {
+                        html += `<li class="list-group-item py-1 d-flex justify-content-between"><span><small class="text-muted">[${npc.npcIndex}]</small> ${escapeHtml(npc.npcName)}</span><small class="text-muted">(${npc.locationX},${npc.locationY})</small></li>`;
+                    });
+                    html += '</ul></div></div>';
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `<div class="alert alert-danger mb-0">${escapeHtml(result.message)}</div>`;
+            }
+        });
+}
+
+// 查看NPC详情
+function viewNpcDetail(npcIndex) {
+    const modal = new bootstrap.Modal(document.getElementById('npcDetailModal'));
+    const content = document.getElementById('npcDetailContent');
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border"></div></div>';
+    modal.show();
+    fetch(`/Npcs?handler=NpcDetail&npcIndex=${npcIndex}`)
+        .then(r => r.json())
+        .then(result => {
+            if (result.success) {
+                const d = result.data;
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-info-circle"></i> 基本信息</h6>
+                            <table class="table table-sm">
+                                <tr><th width="100">ID</th><td><code>${d.index}</code></td></tr>
+                                <tr><th>名称</th><td><strong>${escapeHtml(d.npcName)}</strong></td></tr>
+                                <tr><th>图像</th><td>${d.image}</td></tr>
+                                <tr><th>区域</th><td>${escapeHtml(d.regionName) || '-'}</td></tr>
+                                <tr><th>地图</th><td>${escapeHtml(d.mapName)}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-list-task"></i> 统计</h6>
+                            <table class="table table-sm">
+                                <tr><th width="100">开始任务</th><td><span class="badge bg-info">${d.startQuestsCount}</span></td></tr>
+                                <tr><th>完成任务</th><td><span class="badge bg-success">${d.finishQuestsCount}</span></td></tr>
+                                <tr><th>检查条件</th><td><span class="badge bg-warning text-dark">${d.checksCount}</span></td></tr>
+                                <tr><th>动作</th><td><span class="badge bg-danger">${d.actionsCount}</span></td></tr>
+                                <tr><th>按钮</th><td><span class="badge bg-primary">${d.buttonsCount}</span></td></tr>
+                                <tr><th>商品</th><td><span class="badge bg-success">${d.goodsCount}</span></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    ${d.entryPageIndex > 0 ? `<hr><button class="btn btn-success" onclick="viewNpcPage(${d.entryPageIndex})"><i class="bi bi-chat-dots"></i> 查看入口页面</button>` : ''}
+                `;
+            } else {
+                content.innerHTML = `<div class="alert alert-danger">${escapeHtml(result.message)}</div>`;
+            }
+        });
+}
+
+// 编辑NPC
+async function editNpc(npcIndex) {
+    await fillRegionSelect('editNpcRegion');
+    fetch(`/Npcs?handler=NpcDetail&npcIndex=${npcIndex}`)
+        .then(r => r.json())
+        .then(result => {
+            if (result.success) {
+                const d = result.data;
+                document.getElementById('editNpcIndex').value = d.index;
+                document.getElementById('editNpcName').value = d.npcName;
+                document.getElementById('editNpcImage').value = d.image;
+                document.getElementById('editNpcRegion').value = d.regionIndex;
+                new bootstrap.Modal(document.getElementById('npcEditModal')).show();
+            }
+        });
+}
+
+// 删除NPC
+function deleteNpc(npcIndex, npcName) {
+    if (!confirm(`确定要删除NPC [${npcIndex}] ${npcName} 吗？\n\n此操作将同时删除该NPC的所有对话页面、检查条件、动作、按钮和商品！`)) return;
+    fetch('/Npcs?handler=DeleteNpc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: `npcIndex=${npcIndex}`
+    })
+    .then(r => r.json())
+    .then(result => {
+        if (result.success) {
+            ToastManager.success(result.message);
+            location.reload();
+        } else {
+            ToastManager.error(result.message);
+        }
+    });
+}
+
+// 创建入口页面
+async function createEntryPage(npcIndex) {
+    document.getElementById('createPageNpcIndex').value = npcIndex;
+    await fillDialogTypeSelect('createPageDialogType');
+    new bootstrap.Modal(document.getElementById('createEntryPageModal')).show();
+}
+
+// 查看NPC页面
+function viewNpcPage(pageIndex) {
+    currentPageIndex = pageIndex;
+    bootstrap.Modal.getInstance(document.getElementById('npcDetailModal'))?.hide();
+    const modal = new bootstrap.Modal(document.getElementById('npcPageModal'));
+    const content = document.getElementById('npcPageContent');
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border"></div></div>';
+    modal.show();
+    loadPageContent(pageIndex);
+}
+
+function loadPageContent(pageIndex) {
+    const content = document.getElementById('npcPageContent');
+    fetch(`/Npcs?handler=NpcPageDetail&pageIndex=${pageIndex}`)
+        .then(r => r.json())
+        .then(result => {
+            if (result.success) {
+                const d = result.data;
+                let html = `
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">[${d.index}] ${escapeHtml(d.description) || '未命名页面'}</h5>
+                        <button class="btn btn-warning btn-sm" onclick="editPage(${d.index})"><i class="bi bi-pencil"></i> 编辑页面</button>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4"><strong>对话类型:</strong> <span class="badge bg-secondary">${d.dialogType}</span></div>
+                        <div class="col-md-4"><strong>参数:</strong> <code>${escapeHtml(d.arguments) || '-'}</code></div>
+                        <div class="col-md-4"><strong>成功页面:</strong> ${d.successPageIndex ? `<a href="#" onclick="viewNpcPage(${d.successPageIndex});return false;">[${d.successPageIndex}] ${escapeHtml(d.successPageDescription)}</a>` : '-'}</div>
+                    </div>
+                    <div class="card mb-3"><div class="card-header">对话内容</div><div class="card-body"><pre class="mb-0" style="white-space:pre-wrap;">${escapeHtml(d.say) || '<span class="text-muted">无</span>'}</pre></div></div>
+                `;
+
+                // 检查条件
+                html += `<div class="card mb-3"><div class="card-header d-flex justify-content-between"><span><i class="bi bi-check-circle"></i> 检查条件 (${d.checks.length})</span><button class="btn btn-info btn-sm" onclick="showAddCheck(${pageIndex})"><i class="bi bi-plus"></i></button></div>`;
+                if (d.checks.length > 0) {
+                    html += `<table class="table table-sm mb-0"><thead><tr><th>ID</th><th>类型</th><th>操作符</th><th>参数</th><th>失败页面</th><th></th></tr></thead><tbody>`;
+                    d.checks.forEach(c => {
+                        html += `<tr><td><code>${c.index}</code></td><td><span class="badge bg-info">${c.checkType}</span></td><td>${c.operator}</td><td>${c.itemName || c.stringParameter1 || c.intParameter1 || '-'}</td><td>${c.failPageDescription ? `<a href="#" onclick="viewNpcPage(${c.failPageIndex});return false;">${escapeHtml(c.failPageDescription)}</a>` : '-'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteCheck(${c.index})"><i class="bi bi-trash"></i></button></td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                } else {
+                    html += '<div class="card-body text-muted">暂无检查条件</div>';
+                }
+                html += '</div>';
+
+                // 动作
+                html += `<div class="card mb-3"><div class="card-header d-flex justify-content-between"><span><i class="bi bi-lightning"></i> 动作 (${d.actions.length})</span><button class="btn btn-danger btn-sm" onclick="showAddAction(${pageIndex})"><i class="bi bi-plus"></i></button></div>`;
+                if (d.actions.length > 0) {
+                    html += `<table class="table table-sm mb-0"><thead><tr><th>ID</th><th>类型</th><th>参数</th><th>物品/地图</th><th></th></tr></thead><tbody>`;
+                    d.actions.forEach(a => {
+                        html += `<tr><td><code>${a.index}</code></td><td><span class="badge bg-danger">${a.actionType}</span></td><td>${a.stringParameter1 || a.intParameter1 || '-'} / ${a.intParameter2 || '-'}</td><td>${a.itemName || a.mapName || '-'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteAction(${a.index})"><i class="bi bi-trash"></i></button></td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                } else {
+                    html += '<div class="card-body text-muted">暂无动作</div>';
+                }
+                html += '</div>';
+
+                // 按钮
+                html += `<div class="card mb-3"><div class="card-header d-flex justify-content-between"><span><i class="bi bi-cursor"></i> 按钮 (${d.buttons.length})</span><button class="btn btn-primary btn-sm" onclick="showAddButton(${pageIndex})"><i class="bi bi-plus"></i></button></div>`;
+                if (d.buttons.length > 0) {
+                    html += `<table class="table table-sm mb-0"><thead><tr><th>ID</th><th>按钮ID</th><th>目标页面</th><th></th></tr></thead><tbody>`;
+                    d.buttons.forEach(b => {
+                        html += `<tr><td><code>${b.index}</code></td><td>${b.buttonID}</td><td>${b.destinationPageIndex ? `<a href="#" onclick="viewNpcPage(${b.destinationPageIndex});return false;">[${b.destinationPageIndex}] ${escapeHtml(b.destinationPageDescription)}</a>` : '<button class="btn btn-success btn-sm" onclick="createButtonDestPage('+b.index+')"><i class="bi bi-plus"></i> 创建</button>'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteButton(${b.index})"><i class="bi bi-trash"></i></button></td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                } else {
+                    html += '<div class="card-body text-muted">暂无按钮</div>';
+                }
+                html += '</div>';
+
+                // 商品
+                html += `<div class="card mb-3"><div class="card-header d-flex justify-content-between"><span><i class="bi bi-cart"></i> 商品 (${d.goods.length})</span><button class="btn btn-success btn-sm" onclick="showAddGood(${pageIndex})"><i class="bi bi-plus"></i></button></div>`;
+                if (d.goods.length > 0) {
+                    html += `<table class="table table-sm mb-0"><thead><tr><th>ID</th><th>物品</th><th>倍率</th><th>价格</th><th></th></tr></thead><tbody>`;
+                    d.goods.forEach(g => {
+                        html += `<tr><td><code>${g.index}</code></td><td>[${g.itemIndex}] ${escapeHtml(g.itemName)}</td><td>${g.rate}</td><td class="text-warning">${g.cost.toLocaleString()}</td><td><button class="btn btn-danger btn-sm" onclick="deleteGood(${g.index})"><i class="bi bi-trash"></i></button></td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                } else {
+                    html += '<div class="card-body text-muted">暂无商品</div>';
+                }
+                html += '</div>';
+
+                content.innerHTML = html;
+            } else {
+                content.innerHTML = `<div class="alert alert-danger">${escapeHtml(result.message)}</div>`;
+            }
+        });
+}
+
+// 编辑页面
+async function editPage(pageIndex) {
+    await fillDialogTypeSelect('editPageDialogType');
+    fetch(`/Npcs?handler=NpcPageDetail&pageIndex=${pageIndex}`)
+        .then(r => r.json())
+        .then(result => {
+            if (result.success) {
+                const d = result.data;
+                document.getElementById('editPageIndex').value = d.index;
+                document.getElementById('editPageDescription').value = d.description;
+                document.getElementById('editPageDialogType').value = d.dialogTypeValue;
+                document.getElementById('editPageSay').value = d.say;
+                document.getElementById('editPageArguments').value = d.arguments;
+                new bootstrap.Modal(document.getElementById('editPageModal')).show();
+            }
+        });
+}
+
+// 显示添加检查条件模态框
+async function showAddCheck(pageIndex) {
+    document.getElementById('addCheckPageIndex').value = pageIndex;
+    document.getElementById('addCheckItemIndex').value = '0';
+    document.getElementById('addCheckItemName').textContent = '';
+    await fillCheckTypeSelect('addCheckType');
+    await fillOperatorSelect('addCheckOperator');
+    new bootstrap.Modal(document.getElementById('addCheckModal')).show();
+}
+
+// 显示添加动作模态框
+async function showAddAction(pageIndex) {
+    document.getElementById('addActionPageIndex').value = pageIndex;
+    document.getElementById('addActionItemIndex').value = '0';
+    document.getElementById('addActionItemName').textContent = '';
+    document.getElementById('addActionMapIndex').value = '0';
+    document.getElementById('addActionMapName').textContent = '';
+    await fillActionTypeSelect('addActionType');
+    new bootstrap.Modal(document.getElementById('addActionModal')).show();
+}
+
+// 显示添加按钮模态框
+function showAddButton(pageIndex) {
+    document.getElementById('addButtonPageIndex').value = pageIndex;
+    new bootstrap.Modal(document.getElementById('addButtonModal')).show();
+}
+
+// 显示添加商品模态框
+function showAddGood(pageIndex) {
+    document.getElementById('addGoodPageIndex').value = pageIndex;
+    document.getElementById('addGoodItemIndex').value = '0';
+    document.getElementById('addGoodItemName').textContent = '';
+    new bootstrap.Modal(document.getElementById('addGoodModal')).show();
+}
+
+// 为按钮创建目标页面
+async function createButtonDestPage(buttonIndex) {
+    document.getElementById('createPageNpcIndex').value = buttonIndex;
+    await fillDialogTypeSelect('createPageDialogType');
+    document.getElementById('createEntryPageForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=CreateButtonDestPage', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams({
+                buttonIndex: buttonIndex,
+                description: formData.get('description'),
+                dialogType: formData.get('dialogType'),
+                say: formData.get('say')
+            })
+        });
+        const result = await res.json();
+        if (result.success) {
+            ToastManager.success(result.message);
+            bootstrap.Modal.getInstance(document.getElementById('createEntryPageModal')).hide();
+            if (currentPageIndex) loadPageContent(currentPageIndex);
+        } else {
+            ToastManager.error(result.message);
+        }
+    };
+    new bootstrap.Modal(document.getElementById('createEntryPageModal')).show();
+}
+
+// 删除检查条件
+function deleteCheck(checkIndex) {
+    if (!confirm('确定删除此检查条件？')) return;
+    fetch('/Npcs?handler=DeleteCheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: `checkIndex=${checkIndex}`
+    }).then(r => r.json()).then(result => {
+        if (result.success) { ToastManager.success(result.message); loadPageContent(currentPageIndex); }
+        else ToastManager.error(result.message);
+    });
+}
+
+// 删除动作
+function deleteAction(actionIndex) {
+    if (!confirm('确定删除此动作？')) return;
+    fetch('/Npcs?handler=DeleteAction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: `actionIndex=${actionIndex}`
+    }).then(r => r.json()).then(result => {
+        if (result.success) { ToastManager.success(result.message); loadPageContent(currentPageIndex); }
+        else ToastManager.error(result.message);
+    });
+}
+
+// 删除按钮
+function deleteButton(buttonIndex) {
+    if (!confirm('确定删除此按钮？')) return;
+    fetch('/Npcs?handler=DeleteButton', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: `buttonIndex=${buttonIndex}`
+    }).then(r => r.json()).then(result => {
+        if (result.success) { ToastManager.success(result.message); loadPageContent(currentPageIndex); }
+        else ToastManager.error(result.message);
+    });
+}
+
+// 删除商品
+function deleteGood(goodIndex) {
+    if (!confirm('确定删除此商品？')) return;
+    fetch('/Npcs?handler=DeleteGood', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: `goodIndex=${goodIndex}`
+    }).then(r => r.json()).then(result => {
+        if (result.success) { ToastManager.success(result.message); loadPageContent(currentPageIndex); }
+        else ToastManager.error(result.message);
+    });
+}
+
+// 初始化表单
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置物品搜索
+    setupItemSearch('addCheckItemSearch', 'addCheckItemIndex', 'addCheckItemName');
+    setupItemSearch('addActionItemSearch', 'addActionItemIndex', 'addActionItemName');
+    setupItemSearch('addGoodItemSearch', 'addGoodItemIndex', 'addGoodItemName');
+    setupMapSearch('addActionMapSearch', 'addActionMapIndex', 'addActionMapName');
+
+    // 创建NPC表单
+    document.getElementById('createNpcForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=CreateNpc', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) { ToastManager.success(result.message); location.reload(); }
+        else ToastManager.error(result.message);
+    };
+
+    // 编辑NPC表单
+    document.getElementById('npcEditForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=UpdateNpc', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) { ToastManager.success(result.message); location.reload(); }
+        else ToastManager.error(result.message);
+    };
+
+    // 创建入口页面表单
+    document.getElementById('createEntryPageForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=CreateEntryPage', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) { ToastManager.success(result.message); location.reload(); }
+        else ToastManager.error(result.message);
+    };
+
+    // 编辑页面表单
+    document.getElementById('editPageForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=UpdateNpcPage', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) {
+            ToastManager.success(result.message);
+            bootstrap.Modal.getInstance(document.getElementById('editPageModal')).hide();
+            if (currentPageIndex) loadPageContent(currentPageIndex);
+        } else ToastManager.error(result.message);
+    };
+
+    // 添加检查条件表单
+    document.getElementById('addCheckForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=AddCheck', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) {
+            ToastManager.success(result.message);
+            bootstrap.Modal.getInstance(document.getElementById('addCheckModal')).hide();
+            if (currentPageIndex) loadPageContent(currentPageIndex);
+        } else ToastManager.error(result.message);
+    };
+
+    // 添加动作表单
+    document.getElementById('addActionForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=AddAction', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) {
+            ToastManager.success(result.message);
+            bootstrap.Modal.getInstance(document.getElementById('addActionModal')).hide();
+            if (currentPageIndex) loadPageContent(currentPageIndex);
+        } else ToastManager.error(result.message);
+    };
+
+    // 添加按钮表单
+    document.getElementById('addButtonForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/Npcs?handler=AddButton', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) {
+            ToastManager.success(result.message);
+            bootstrap.Modal.getInstance(document.getElementById('addButtonModal')).hide();
+            if (currentPageIndex) loadPageContent(currentPageIndex);
+        } else ToastManager.error(result.message);
+    };
+
+    // 添加商品表单
+    document.getElementById('addGoodForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        if (formData.get('itemIndex') == '0') {
+            ToastManager.error('请选择物品');
+            return;
+        }
+        const res = await fetch('/Npcs?handler=AddGood', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        });
+        const result = await res.json();
+        if (result.success) {
+            ToastManager.success(result.message);
+            bootstrap.Modal.getInstance(document.getElementById('addGoodModal')).hide();
+            if (currentPageIndex) loadPageContent(currentPageIndex);
+        } else ToastManager.error(result.message);
+    };
+});
+</script>
+}

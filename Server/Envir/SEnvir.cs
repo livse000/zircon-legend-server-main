@@ -647,6 +647,12 @@ namespace Server.Envir
         public static DBCollection<BaseStat> BaseStatList;
         public static DBCollection<MovementInfo> MovementInfoList;
         public static DBCollection<NPCInfo> NPCInfoList;
+        public static DBCollection<NPCPage> NPCPageList;
+        public static DBCollection<NPCCheck> NPCCheckList;
+        public static DBCollection<NPCAction> NPCActionList;
+        public static DBCollection<NPCButton> NPCButtonList;
+        public static DBCollection<NPCGood> NPCGoodList;
+        public static DBCollection<NPCType> NPCTypeList;
         public static DBCollection<MapRegion> MapRegionList;
         public static DBCollection<GuildInfo> GuildInfoList;
         public static DBCollection<GuildMemberInfo> GuildMemberInfoList;
@@ -882,6 +888,12 @@ namespace Server.Envir
             BaseStatList = Session.GetCollection<BaseStat>();
             MovementInfoList = Session.GetCollection<MovementInfo>();
             NPCInfoList = Session.GetCollection<NPCInfo>();
+            NPCPageList = Session.GetCollection<NPCPage>();
+            NPCCheckList = Session.GetCollection<NPCCheck>();
+            NPCActionList = Session.GetCollection<NPCAction>();
+            NPCButtonList = Session.GetCollection<NPCButton>();
+            NPCGoodList = Session.GetCollection<NPCGood>();
+            NPCTypeList = Session.GetCollection<NPCType>();
             MapRegionList = Session.GetCollection<MapRegion>();
             GuildInfoList = Session.GetCollection<GuildInfo>();
             GuildMemberInfoList = Session.GetCollection<GuildMemberInfo>();
