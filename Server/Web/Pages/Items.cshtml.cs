@@ -501,7 +501,7 @@ namespace Server.Web.Pages
                 {
                     item.ItemStats.Remove(stat);
                     // 从数据库中删除
-                    SEnvir.ItemInfoStatList?.Delete(stat);
+                    stat.Delete();
                 }
 
                 // 更新或添加属性
