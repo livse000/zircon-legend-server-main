@@ -204,35 +204,55 @@ namespace Server.Web.Pages
                 // 处理区域设置
                 if (regionIndex > 0)
                 {
+                    // 使用选择的区域
                     var region = SEnvir.MapRegionList?.Binding?.FirstOrDefault(r => r.Index == regionIndex);
                     if (region != null)
                         newNpc.Region = region;
                 }
-                else if (mapIndex > 0)
+                else if (mapIndex > 0 && (locationX > 0 || locationY > 0))
                 {
-                    // 如果没有选择区域但选择了地图，创建或使用该地图的默认区域
+                    // 选择了地图和坐标，创建一个专属的单点区域
                     var map = SEnvir.MapInfoList?.Binding?.FirstOrDefault(m => m.Index == mapIndex);
                     if (map != null)
                     {
-                        // 查找或创建该地图的默认区域
-                        var region = SEnvir.MapRegionList?.Binding?.FirstOrDefault(r => r.Map?.Index == mapIndex);
-                        if (region != null)
+                        var newRegion = SEnvir.MapRegionList?.CreateNewObject();
+                        if (newRegion != null)
                         {
-                            newNpc.Region = region;
+                            newRegion.Map = map;
+                            newRegion.Description = $"NPC_{npcName}_{locationX}_{locationY}";
+                            newRegion.Size = 0;
+                            // 设置单点区域
+                            newRegion.PointRegion = new System.Drawing.Point[] { new System.Drawing.Point(locationX, locationY) };
+                            newRegion.PointList = new List<System.Drawing.Point> { new System.Drawing.Point(locationX, locationY) };
+                            newNpc.Region = newRegion;
+                            SEnvir.Log($"[Admin] 为NPC [{newNpc.Index}] 创建专属区域: {newRegion.Description}");
                         }
                     }
                 }
-
-                SEnvir.Log($"[Admin] 新建NPC: [{newNpc.Index}] {npcName}");
-
-                // 如果设置了坐标，生成NPC并移动到指定位置
-                if (locationX > 0 || locationY > 0)
+                else if (mapIndex > 0)
                 {
-                    // 需要先生成NPC实例，然后移动到指定位置
-                    // 由于NPC需要在服务器运行时才能生成实例，这里先保存位置信息到日志
-                    SEnvir.Log($"[Admin] NPC [{newNpc.Index}] 设置坐标: ({locationX}, {locationY})");
+                    // 只选择了地图没有坐标，查找该地图的第一个区域
+                    var region = SEnvir.MapRegionList?.Binding?.FirstOrDefault(r => r.Map?.Index == mapIndex);
+                    if (region != null)
+                    {
+                        newNpc.Region = region;
+                    }
+                    else
+                    {
+                        // 没有现有区域，提示用户
+                        var result = new { success = false, message = "该地图没有可用区域，请指定坐标或先创建区域" };
+                        if (IsAjaxRequest()) return new JsonResult(result);
+                        Message = result.message;
+                        LoadNpcs();
+                        return Page();
+                    }
+                }
 
-                    // 尝试生成NPC并移动到指定位置
+                SEnvir.Log($"[Admin] 新建NPC: [{newNpc.Index}] {npcName}, Region: {newNpc.Region?.ServerDescription ?? "无"}");
+
+                // 如果设置了坐标，立即生成NPC实例并移动到指定位置
+                if (mapIndex > 0 && (locationX > 0 || locationY > 0))
+                {
                     SpawnAndMoveNpc(newNpc, mapIndex, locationX, locationY);
                 }
 
