@@ -363,6 +363,156 @@
                             <input type="number" class="form-control" name="effect" id="editEffect" min="0" max="9999999" value="0" title="ItemEffect枚举值">
                         </div>
                     </div>
+
+                    <!-- 装备属性编辑区域 -->
+                    <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-shield-fill"></i> 装备属性</h6>
+                    <input type="hidden" name="stats" id="editStats">
+
+                    <!-- 常用属性快捷输入 -->
+                    <div class="row g-2 mb-3">
+                        <!-- 基础防御 -->
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-header py-1 bg-secondary text-white small">
+                                    <i class="bi bi-shield"></i> 基础防御
+                                </div>
+                                <div class="card-body py-2">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1">物防 (AC)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control stat-input" data-stat="3" id="statMinAC" placeholder="最小">
+                                                <span class="input-group-text">-</span>
+                                                <input type="number" class="form-control stat-input" data-stat="4" id="statMaxAC" placeholder="最大">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1">魔防 (MR)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control stat-input" data-stat="5" id="statMinMR" placeholder="最小">
+                                                <span class="input-group-text">-</span>
+                                                <input type="number" class="form-control stat-input" data-stat="6" id="statMaxMR" placeholder="最大">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 攻击力 -->
+                        <div class="col-md-6">
+                            <div class="card border-danger">
+                                <div class="card-header py-1 bg-danger text-white small">
+                                    <i class="bi bi-lightning"></i> 攻击力
+                                </div>
+                                <div class="card-body py-2">
+                                    <div class="row g-2">
+                                        <div class="col-4">
+                                            <label class="form-label small mb-1">攻击 (DC)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control stat-input" data-stat="7" id="statMinDC" placeholder="最小">
+                                                <span class="input-group-text">-</span>
+                                                <input type="number" class="form-control stat-input" data-stat="8" id="statMaxDC" placeholder="最大">
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small mb-1">魔法 (MC)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control stat-input" data-stat="9" id="statMinMC" placeholder="最小">
+                                                <span class="input-group-text">-</span>
+                                                <input type="number" class="form-control stat-input" data-stat="10" id="statMaxMC" placeholder="最大">
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small mb-1">道术 (SC)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control stat-input" data-stat="11" id="statMinSC" placeholder="最小">
+                                                <span class="input-group-text">-</span>
+                                                <input type="number" class="form-control stat-input" data-stat="12" id="statMaxSC" placeholder="最大">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基础属性 -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <div class="card border-info">
+                                <div class="card-header py-1 bg-info text-white small">
+                                    <i class="bi bi-heart"></i> 基础属性
+                                </div>
+                                <div class="card-body py-2">
+                                    <div class="row g-2">
+                                        <div class="col-md-2">
+                                            <label class="form-label small mb-1">生命</label>
+                                            <input type="number" class="form-control form-control-sm stat-input" data-stat="0" id="statHealth" placeholder="0">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small mb-1">魔法</label>
+                                            <input type="number" class="form-control form-control-sm stat-input" data-stat="1" id="statMana" placeholder="0">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small mb-1">准确</label>
+                                            <input type="number" class="form-control form-control-sm stat-input" data-stat="13" id="statAccuracy" placeholder="0">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small mb-1">敏捷</label>
+                                            <input type="number" class="form-control form-control-sm stat-input" data-stat="14" id="statAgility" placeholder="0">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small mb-1">攻速</label>
+                                            <input type="number" class="form-control form-control-sm stat-input" data-stat="20" id="statAttackSpeed" placeholder="0">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small mb-1">幸运</label>
+                                            <input type="number" class="form-control form-control-sm stat-input" data-stat="21" id="statLuck" placeholder="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 其他属性（可折叠） -->
+                    <div class="accordion mb-3" id="advancedStatsAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#advancedStatsCollapse">
+                                    <i class="bi bi-gear me-2"></i> 其他属性
+                                    <span class="badge bg-secondary ms-2" id="advancedStatsCount">0</span>
+                                </button>
+                            </h2>
+                            <div id="advancedStatsCollapse" class="accordion-collapse collapse" data-bs-parent="#advancedStatsAccordion">
+                                <div class="accordion-body p-2">
+                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-bordered mb-2">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 50%;">属性类型</th>
+                                                    <th style="width: 30%;">数值</th>
+                                                    <th style="width: 20%;">操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="advancedStatsList">
+                                                <!-- 动态生成 -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="newStatType" style="flex: 1;">
+                                            <option value="">-- 选择属性 --</option>
+                                        </select>
+                                        <input type="number" class="form-control form-control-sm" id="newStatValue" placeholder="数值" style="width: 100px;">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAdvancedStat()">
+                                            <i class="bi bi-plus"></i> 添加
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <span class="text-muted me-auto"><i class="bi bi-exclamation-triangle"></i> 需要 SuperAdmin 权限</span>
@@ -548,6 +698,9 @@ function createItem() {
     document.getElementById('editItemIndex').value = '';
     document.getElementById('itemModalTitle').innerHTML = '<i class="bi bi-plus-lg"></i> 新建物品';
 
+    // 重置属性编辑区域
+    clearAllStats();
+
     new bootstrap.Modal(document.getElementById('itemModal')).show();
 }
 
@@ -576,6 +729,9 @@ function editItem(itemIndex) {
                 document.getElementById('editStackSize').value = data.stackSize;
                 document.getElementById('editRarity').value = data.rarity;
 
+                // 加载属性
+                loadItemStats(data.stats || []);
+
                 document.getElementById('itemModalTitle').innerHTML = '<i class="bi bi-pencil"></i> 编辑物品 [' + data.index + ']';
                 new bootstrap.Modal(document.getElementById('itemModal')).show();
             } else {
@@ -586,5 +742,236 @@ function editItem(itemIndex) {
             ToastManager.error('请求失败: ' + error.message);
         });
 }
+
+// ==================== 属性编辑功能 ====================
+
+// 常用属性映射表 (statType -> inputId)
+const quickStatInputs = {
+    0: 'statHealth',      // Health
+    1: 'statMana',        // Mana
+    3: 'statMinAC',       // MinAC
+    4: 'statMaxAC',       // MaxAC
+    5: 'statMinMR',       // MinMR
+    6: 'statMaxMR',       // MaxMR
+    7: 'statMinDC',       // MinDC
+    8: 'statMaxDC',       // MaxDC
+    9: 'statMinMC',       // MinMC
+    10: 'statMaxMC',      // MaxMC
+    11: 'statMinSC',      // MinSC
+    12: 'statMaxSC',      // MaxSC
+    13: 'statAccuracy',   // Accuracy
+    14: 'statAgility',    // Agility
+    20: 'statAttackSpeed',// AttackSpeed
+    21: 'statLuck'        // Luck
+};
+
+// 高级属性列表（用于其他属性下拉框）
+let allStatTypes = [];
+let advancedStats = []; // 当前的高级属性列表
+
+// 初始化时加载属性类型列表
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatTypes();
+});
+
+// 加载属性类型列表
+function loadStatTypes() {
+    fetch('/Items?handler=StatTypes')
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                allStatTypes = [];
+                const select = document.getElementById('newStatType');
+                select.innerHTML = '<option value="">-- 选择属性 --</option>';
+
+                // 按分组填充下拉框
+                result.data.forEach(group => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = group.group;
+                    group.stats.forEach(stat => {
+                        allStatTypes.push(stat);
+                        // 过滤掉常用属性（已在快捷输入中）
+                        if (!quickStatInputs.hasOwnProperty(stat.value)) {
+                            const option = document.createElement('option');
+                            option.value = stat.value;
+                            option.textContent = stat.name;
+                            optgroup.appendChild(option);
+                        }
+                    });
+                    if (optgroup.children.length > 0) {
+                        select.appendChild(optgroup);
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('加载属性类型失败:', error));
+}
+
+// 清空所有属性
+function clearAllStats() {
+    // 清空常用属性输入框
+    document.querySelectorAll('.stat-input').forEach(input => {
+        input.value = '';
+    });
+
+    // 清空高级属性列表
+    advancedStats = [];
+    renderAdvancedStats();
+
+    // 清空隐藏字段
+    document.getElementById('editStats').value = '';
+}
+
+// 加载物品属性到表单
+function loadItemStats(stats) {
+    clearAllStats();
+
+    if (!stats || !Array.isArray(stats)) return;
+
+    stats.forEach(stat => {
+        const statType = stat.statType;
+        const amount = stat.amount;
+
+        // 检查是否是常用属性
+        if (quickStatInputs.hasOwnProperty(statType)) {
+            const inputId = quickStatInputs[statType];
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = amount;
+            }
+        } else {
+            // 添加到高级属性列表
+            advancedStats.push({
+                statType: statType,
+                statName: stat.statName || getStatName(statType),
+                amount: amount
+            });
+        }
+    });
+
+    renderAdvancedStats();
+}
+
+// 获取属性名称
+function getStatName(statType) {
+    const stat = allStatTypes.find(s => s.value === statType);
+    return stat ? stat.name : `Stat_${statType}`;
+}
+
+// 渲染高级属性列表
+function renderAdvancedStats() {
+    const tbody = document.getElementById('advancedStatsList');
+    const countBadge = document.getElementById('advancedStatsCount');
+
+    tbody.innerHTML = '';
+    countBadge.textContent = advancedStats.length;
+
+    advancedStats.forEach((stat, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span class="badge bg-secondary">${escapeHtml(stat.statName)}</span></td>
+            <td>
+                <input type="number" class="form-control form-control-sm advanced-stat-amount"
+                       data-index="${index}" value="${stat.amount}" onchange="updateAdvancedStat(${index}, this.value)">
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAdvancedStat(${index})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// 添加高级属性
+function addAdvancedStat() {
+    const select = document.getElementById('newStatType');
+    const valueInput = document.getElementById('newStatValue');
+
+    const statType = parseInt(select.value);
+    const amount = parseInt(valueInput.value) || 0;
+
+    if (!statType) {
+        ToastManager.warning('请选择属性类型');
+        return;
+    }
+
+    if (amount === 0) {
+        ToastManager.warning('请输入属性数值');
+        return;
+    }
+
+    // 检查是否已存在
+    if (advancedStats.some(s => s.statType === statType)) {
+        ToastManager.warning('该属性已存在');
+        return;
+    }
+
+    // 检查是否是常用属性（不应该添加到高级列表）
+    if (quickStatInputs.hasOwnProperty(statType)) {
+        ToastManager.warning('该属性请使用上方快捷输入');
+        return;
+    }
+
+    advancedStats.push({
+        statType: statType,
+        statName: getStatName(statType),
+        amount: amount
+    });
+
+    renderAdvancedStats();
+
+    // 清空输入
+    select.value = '';
+    valueInput.value = '';
+}
+
+// 更新高级属性值
+function updateAdvancedStat(index, value) {
+    if (advancedStats[index]) {
+        advancedStats[index].amount = parseInt(value) || 0;
+    }
+}
+
+// 删除高级属性
+function removeAdvancedStat(index) {
+    advancedStats.splice(index, 1);
+    renderAdvancedStats();
+}
+
+// 收集所有属性并更新隐藏字段
+function collectAllStats() {
+    const stats = [];
+
+    // 收集常用属性
+    document.querySelectorAll('.stat-input').forEach(input => {
+        const statType = parseInt(input.dataset.stat);
+        const amount = parseInt(input.value) || 0;
+        if (amount !== 0) {
+            stats.push({ statType: statType, amount: amount });
+        }
+    });
+
+    // 收集高级属性
+    advancedStats.forEach(stat => {
+        if (stat.amount !== 0) {
+            stats.push({ statType: stat.statType, amount: stat.amount });
+        }
+    });
+
+    // 更新隐藏字段
+    document.getElementById('editStats').value = JSON.stringify(stats);
+}
+
+// 表单提交前收集属性
+document.addEventListener('DOMContentLoaded', function() {
+    const itemForm = document.getElementById('itemForm');
+    if (itemForm) {
+        itemForm.addEventListener('submit', function(e) {
+            collectAllStats();
+        });
+    }
+});
 </script>
 }

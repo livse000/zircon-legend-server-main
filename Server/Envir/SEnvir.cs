@@ -673,6 +673,7 @@ namespace Server.Envir
         public static DBCollection<UserFortuneInfo> UserFortuneInfoList; 
         public static DBCollection<WeaponCraftStatInfo> WeaponCraftStatInfoList;
         public static DBCollection<MonsterInfoStat> MonsterStatList;
+        public static DBCollection<ItemInfoStat> ItemInfoStatList;
 
         public static ItemInfo GoldInfo, RefinementStoneInfo, FragmentInfo, Fragment2Info, Fragment3Info, FortuneCheckerInfo, ItemPartInfo;
 
@@ -915,6 +916,7 @@ namespace Server.Envir
             UserFortuneInfoList = Session.GetCollection<UserFortuneInfo>();
             WeaponCraftStatInfoList = Session.GetCollection<WeaponCraftStatInfo>();
             MonsterStatList = Session.GetCollection<MonsterInfoStat>();
+            ItemInfoStatList = Session.GetCollection<ItemInfoStat>();
 
              GoldInfo = ItemInfoList.Binding.First(x => x.Effect == ItemEffect.Gold);
             RefinementStoneInfo = ItemInfoList.Binding.First(x => x.Effect == ItemEffect.RefinementStone);
@@ -1403,6 +1405,7 @@ namespace Server.Envir
             UserMagicList = null;
             BuffInfoList = null;
             SetInfoList = null;
+            ItemInfoStatList = null;
 
             Rankings = null;
             Random = null;

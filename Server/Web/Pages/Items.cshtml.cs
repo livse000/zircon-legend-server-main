@@ -223,7 +223,13 @@ namespace Server.Web.Pages
                     Price = item.Price,
                     Weight = item.Weight,
                     StackSize = item.StackSize,
-                    Rarity = (int)item.Rarity
+                    Rarity = (int)item.Rarity,
+                    Stats = item.ItemStats?.Select(s => new ItemStatViewModel
+                    {
+                        StatType = (int)s.Stat,
+                        StatName = s.Stat.ToString(),
+                        Amount = s.Amount
+                    }).ToList() ?? new List<ItemStatViewModel>()
                 };
 
                 return new JsonResult(new { success = true, data = detail });
@@ -232,6 +238,43 @@ namespace Server.Web.Pages
             {
                 return new JsonResult(new { success = false, message = ex.Message });
             }
+        }
+
+        // 获取属性类型列表（分组）
+        public IActionResult OnGetStatTypes()
+        {
+            if (!HasPermission(AccountIdentity.Admin))
+            {
+                return new JsonResult(new { success = false, message = "权限不足" });
+            }
+
+            // 定义属性分组
+            var statGroups = new Dictionary<string, List<Stat>>
+            {
+                ["基础防御"] = new List<Stat> { Stat.MinAC, Stat.MaxAC, Stat.MinMR, Stat.MaxMR },
+                ["攻击力"] = new List<Stat> { Stat.MinDC, Stat.MaxDC, Stat.MinMC, Stat.MaxMC, Stat.MinSC, Stat.MaxSC },
+                ["基础属性"] = new List<Stat> { Stat.Health, Stat.Mana, Stat.Accuracy, Stat.Agility, Stat.AttackSpeed, Stat.Luck, Stat.Strength, Stat.Light },
+                ["元素攻击"] = new List<Stat> { Stat.FireAttack, Stat.IceAttack, Stat.LightningAttack, Stat.WindAttack, Stat.HolyAttack, Stat.DarkAttack, Stat.PhantomAttack },
+                ["元素抵抗"] = new List<Stat> { Stat.FireResistance, Stat.IceResistance, Stat.LightningResistance, Stat.WindResistance, Stat.HolyResistance, Stat.DarkResistance, Stat.PhantomResistance, Stat.PhysicalResistance },
+                ["元素亲和"] = new List<Stat> { Stat.FireAffinity, Stat.IceAffinity, Stat.LightningAffinity, Stat.WindAffinity, Stat.HolyAffinity, Stat.DarkAffinity, Stat.PhantomAffinity },
+                ["特殊效果"] = new List<Stat> { Stat.LifeSteal, Stat.CriticalChance, Stat.CriticalDamage, Stat.DamageReduction, Stat.ReflectDamage, Stat.BlockChance, Stat.EvasionChance, Stat.MagicShield, Stat.Healing },
+                ["负重背包"] = new List<Stat> { Stat.BagWeight, Stat.WearWeight, Stat.HandWeight, Stat.PickUpRadius },
+                ["倍率加成"] = new List<Stat> { Stat.ExperienceRate, Stat.DropRate, Stat.GoldRate }
+            };
+
+            var result = new List<object>();
+            foreach (var group in statGroups)
+            {
+                var items = group.Value.Select(s => new StatTypeInfo
+                {
+                    Value = (int)s,
+                    Name = s.ToString(),
+                    Group = group.Key
+                }).ToList();
+                result.Add(new { group = group.Key, stats = items });
+            }
+
+            return new JsonResult(new { success = true, data = result });
         }
 
         // 新建物品
@@ -249,7 +292,8 @@ namespace Server.Web.Pages
             int price,
             int weight,
             int stackSize,
-            int rarity)
+            int rarity,
+            string? stats)
         {
             if (!HasPermission(AccountIdentity.SuperAdmin))
             {
@@ -299,6 +343,12 @@ namespace Server.Web.Pages
                 newItem.StackSize = stackSize > 0 ? stackSize : 1;
                 newItem.Rarity = (Rarity)rarity;
 
+                // 处理属性
+                if (!string.IsNullOrWhiteSpace(stats))
+                {
+                    UpdateItemStats(newItem, stats);
+                }
+
                 SEnvir.Log($"[Admin] 新建物品: [{newItem.Index}] {itemName}");
                 if (IsAjaxRequest())
                 {
@@ -343,7 +393,8 @@ namespace Server.Web.Pages
             int price,
             int weight,
             int stackSize,
-            int rarity)
+            int rarity,
+            string? stats)
         {
             if (!HasPermission(AccountIdentity.SuperAdmin))
             {
@@ -385,6 +436,12 @@ namespace Server.Web.Pages
                 item.StackSize = stackSize > 0 ? stackSize : 1;
                 item.Rarity = (Rarity)rarity;
 
+                // 处理属性
+                if (!string.IsNullOrWhiteSpace(stats))
+                {
+                    UpdateItemStats(item, stats);
+                }
+
                 SEnvir.Log($"[Admin] 修改物品: [{itemIndex}] {oldName} -> {itemName}");
                 if (IsAjaxRequest())
                 {
@@ -411,6 +468,72 @@ namespace Server.Web.Pages
 
             LoadItems();
             return Page();
+        }
+
+        /// <summary>
+        /// 更新物品属性
+        /// </summary>
+        /// <param name="item">物品对象</param>
+        /// <param name="statsJson">属性JSON字符串，格式: [{"statType":1,"amount":10},...]</param>
+        private void UpdateItemStats(ItemInfo item, string statsJson)
+        {
+            if (item.ItemStats == null) return;
+
+            try
+            {
+                var statInputs = System.Text.Json.JsonSerializer.Deserialize<List<StatInput>>(statsJson);
+                if (statInputs == null) return;
+
+                // 构建要保存的属性字典
+                var newStats = new Dictionary<Stat, int>();
+                foreach (var input in statInputs)
+                {
+                    var stat = (Stat)input.StatType;
+                    if (input.Amount != 0)
+                    {
+                        newStats[stat] = input.Amount;
+                    }
+                }
+
+                // 删除不再需要的属性
+                var toRemove = item.ItemStats.Where(s => !newStats.ContainsKey(s.Stat)).ToList();
+                foreach (var stat in toRemove)
+                {
+                    item.ItemStats.Remove(stat);
+                    // 从数据库中删除
+                    SEnvir.ItemInfoStatList?.Delete(stat);
+                }
+
+                // 更新或添加属性
+                foreach (var kvp in newStats)
+                {
+                    var existingStat = item.ItemStats.FirstOrDefault(s => s.Stat == kvp.Key);
+                    if (existingStat != null)
+                    {
+                        // 更新现有属性
+                        existingStat.Amount = kvp.Value;
+                    }
+                    else
+                    {
+                        // 创建新属性
+                        var newStat = SEnvir.ItemInfoStatList?.CreateNewObject();
+                        if (newStat != null)
+                        {
+                            newStat.Stat = kvp.Key;
+                            newStat.Amount = kvp.Value;
+                            newStat.Item = item;
+                            item.ItemStats.Add(newStat);
+                        }
+                    }
+                }
+
+                // 触发属性重算
+                item.StatsChanged();
+            }
+            catch (System.Exception ex)
+            {
+                SEnvir.Log($"[Admin] 更新物品属性失败: {ex.Message}");
+            }
         }
 
         private bool HasPermission(AccountIdentity required)
@@ -456,5 +579,29 @@ namespace Server.Web.Pages
         public int Weight { get; set; }
         public int StackSize { get; set; }
         public int Rarity { get; set; }
+        public List<ItemStatViewModel> Stats { get; set; } = new();
+    }
+
+    public class ItemStatViewModel
+    {
+        public int StatType { get; set; }
+        public string StatName { get; set; } = "";
+        public int Amount { get; set; }
+    }
+
+    public class StatTypeInfo
+    {
+        public int Value { get; set; }
+        public string Name { get; set; } = "";
+        public string Group { get; set; } = "";
+    }
+
+    /// <summary>
+    /// 用于接收前端提交的属性数据
+    /// </summary>
+    public class StatInput
+    {
+        public int StatType { get; set; }
+        public int Amount { get; set; }
     }
 }
