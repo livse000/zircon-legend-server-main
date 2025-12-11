@@ -859,7 +859,7 @@ namespace Server.Envir
 
             Random = new Random();
 
-            Session = new Session(SessionMode.Users)
+            Session = new Session(SessionMode.Both)
             {
                 BackUpDelay = 60,
             };

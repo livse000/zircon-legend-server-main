@@ -18,6 +18,7 @@ namespace MirDB
         private const string CompressExtention = @".gz";
 
         private DateTime BackupTime = DateTime.MinValue;
+        private DateTime SystemBackupTime = DateTime.MinValue;
 
         private string Root { get; }
         internal SessionMode Mode { get; }
@@ -208,6 +209,13 @@ namespace MirDB
             if (!Directory.Exists(Root))
                 Directory.CreateDirectory(Root);
 
+            // Ensure system collections are serialized before writing to disk
+            Parallel.ForEach(Collections, x =>
+            {
+                if (!x.Value.IsSystemData) return;
+                x.Value.SaveObjects();
+            });
+
             using (BinaryWriter writer = new BinaryWriter(File.Create(SystemPath + TempExtention)))
             {
                 writer.Write(SystemHeader);
@@ -226,7 +234,16 @@ namespace MirDB
                 Directory.CreateDirectory(SystemBackupPath);
 
             if (File.Exists(SystemPath))
-                File.Move(SystemPath, SystemBackupPath + "System " + ToBackUpFileName(DateTime.Now.ToLocalTime()) + Extention);
+            {
+                var now = DateTime.Now;
+                if (BackUpSpace < TimeSpan.MaxValue && now > SystemBackupTime)
+                {
+                    File.Move(SystemPath, SystemBackupPath + "System " + ToBackUpFileName(now.ToLocalTime()) + Extention);
+                    SystemBackupTime = now + BackUpSpace;
+                }
+                else
+                    File.Delete(SystemPath);
+            }
 
             File.Move(SystemPath + TempExtention, SystemPath);
         }
