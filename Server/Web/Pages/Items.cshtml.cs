@@ -521,8 +521,8 @@ namespace Server.Web.Pages
                         {
                             newStat.Stat = kvp.Key;
                             newStat.Amount = kvp.Value;
+                            // 设置关联会自动将 newStat 添加到 item.ItemStats (MirDB 关联机制)
                             newStat.Item = item;
-                            item.ItemStats.Add(newStat);
                         }
                     }
                 }
